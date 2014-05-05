@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelReader", "ExcelReader\ExcelReader.csproj", "{1BB718F3-B72B-46E4-8E9E-5E26EFE459C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelReader.Tests", "ExcelReader.Tests\ExcelReader.Tests.csproj", "{F8FCB66A-1160-4C3A-948C-F2DF17EE0BA7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gimli", "Gimli\Gimli.csproj", "{27FF163D-D043-40C0-98B0-0FC98BE3A2F7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BB718F3-B72B-46E4-8E9E-5E26EFE459C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BB718F3-B72B-46E4-8E9E-5E26EFE459C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BB718F3-B72B-46E4-8E9E-5E26EFE459C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BB718F3-B72B-46E4-8E9E-5E26EFE459C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8FCB66A-1160-4C3A-948C-F2DF17EE0BA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8FCB66A-1160-4C3A-948C-F2DF17EE0BA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8FCB66A-1160-4C3A-948C-F2DF17EE0BA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8FCB66A-1160-4C3A-948C-F2DF17EE0BA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27FF163D-D043-40C0-98B0-0FC98BE3A2F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27FF163D-D043-40C0-98B0-0FC98BE3A2F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27FF163D-D043-40C0-98B0-0FC98BE3A2F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27FF163D-D043-40C0-98B0-0FC98BE3A2F7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
