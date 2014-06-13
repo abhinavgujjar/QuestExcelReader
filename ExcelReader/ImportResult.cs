@@ -10,5 +10,6 @@ namespace ExcelReader
         public int NumberOfRecords { get; set; }
         public string Message { get; set; }
         public bool Failed { get; set; }
+        public List<FullStudent> ImportStudents{ get; set; }
     }
 }

@@ -19,6 +19,8 @@ namespace ExcelReader
 
         WorksheetHelper _helper;
 
+        QSStagingDbContext db = new QSStagingDbContext();
+
         public int NumberOfBufferRecords { get; set; }
 
         public Importer(ExcelWorksheet workSheet, JToken config)
@@ -32,21 +34,27 @@ namespace ExcelReader
 
         public ValidationResult Validate()
         {
-            Validator validator = new Validator(_workSheet, _config);
-            return validator.Validate();
+            try
+            {
+                Validator validator = new Validator(_workSheet, _config);
+                return validator.Validate();
+            }
+            catch (Exception e)
+            {
+                throw new ApplicationException("Error during validation. Are you sure the file is formatted corectly?", e);
+            }
 
         }
 
         public ImportResult Import()
         {
             ImportResult result = new ImportResult();
-            
-            bool recordsExist = checkIfRecordsExistForBatch();
 
-            QSStagingDbContext db = new QSStagingDbContext();
-
-            var students = new List<StudentProfile>();
             int rowIndex = (int)_config["dataRowStart"];
+
+            bool first = true;
+            List<string> messages = new List<string>();
+            List<FullStudent> imports = new List<FullStudent>();
 
             while (true)
             {
@@ -56,92 +64,145 @@ namespace ExcelReader
                     break;
                 }
 
-                var uid = _helper.getCellValue("Uid", rowIndex);
 
-                StudentProfile student = null;
-                if (!String.IsNullOrEmpty(uid))
+                try
                 {
-                    student = db.StudentProfiles.Where(s => s.Uid == uid).SingleOrDefault();
-                }
+                    FullStudent student = new FullStudent();
 
-                if (student == null)
+                    var profile = importProfile(rowIndex);
+                    student.Profile = profile;
+
+
+                    var placement = importPlacement(rowIndex);
+                    student.Placement = placement;
+
+
+                    var scores = importScores(rowIndex, profile.Id, first);
+                    student.Scores = scores;
+
+                    imports.Add(student);
+                   
+                }
+                catch (Exception e)
                 {
-                    student = new StudentProfile();
+                    throw new ApplicationException("Error loading at row : " + rowIndex, e);
                 }
-
-                GetExcelRow(rowIndex, student);
-
-                if (String.IsNullOrEmpty(uid))
-                {
-                    uid = UidGenerator.GenerateUid(student.Name, student.TrainingCenter, student.Location, student.BatchNumer);
-
-                    if (db.StudentProfiles.Where(s => s.Uid == uid).FirstOrDefault() != null)
-                    {
-                        uid = uid + rowIndex;
-                    }
-                    
-
-                    //check for conflict
-                    if (students.Where(s => s.Uid == uid).Count() > 0)
-                    {
-                        uid = uid + rowIndex;
-                    }
-
-                    student.Uid = uid;
-
-                    //update the excel sheet as well
-                    _helper.updateCellValue("Uid", rowIndex, uid);
-
-                    db.StudentProfiles.Add(student);
-                }
-
-                students.Add(student);
-
 
                 rowIndex++;
+                first = false;
             }
 
-            result.NumberOfRecords = rowIndex;
-            result.Message = "Import Successful";
-
-            //var sampleStudent = students.First();
-
-            ////add some buffer records
-            //if (!recordsExist)
-            //{
-            //    for (int i = 0; i < NumberOfBufferRecords; i++)
-            //    {
-            //        var uid = UidGenerator.GenerateUid("buffer", sampleStudent.TrainingCenter, sampleStudent.Location, sampleStudent.BatchNumer);
-            //        uid = uid + i;
-
-            //        var student = getBufferEntry(sampleStudent, i, uid);
-
-            //        students.Add(student);
-
-            //        AddExcelRow(rowIndex, i, uid, student);
-            //    }
-            //}
-
-            
+            result.ImportStudents = imports;
 
             return result;
         }
 
-        private bool checkIfRecordsExistForBatch()
+        private bool skipSubject(string subjectName, JToken _config)
         {
-            var dataStartRow = (int)_config["dataRowStart"];
-            var centreName = _helper.getCellValue("TrainingCentre", dataStartRow);
-            var batchNumber = Convert.ToInt32( _helper.getCellValue("BatchNumber", dataStartRow));
-            var location = _helper.getCellValue("Location", dataStartRow);
-
-            using (QSStagingDbContext db = new QSStagingDbContext())
+            var shouldSkip = false;
+            foreach (var item in _config["skipColumns"])
             {
-                var matchingRecords = db.StudentProfiles.Where(p => p.TrainingCenter == centreName 
-                    && p.BatchNumer ==  batchNumber
-                    && p.Location == location);
-
-                return matchingRecords.Count() > 0;
+                if ((string)item == subjectName || subjectName.ToLower().Contains(((string)item).ToLower()))
+                {
+                    shouldSkip = true;
+                }
             }
+            return shouldSkip;
+        }
+
+        private List<Legacy_SubjectScore> importScores(int rowIndex, int studentId, bool first)
+        {
+            List<Legacy_SubjectScore> scores = new List<Legacy_SubjectScore>();
+
+            int dataRowStart = (int)_config["dataRowStart"];
+            int subjectRowIndex = (int)_config["subjectRowIndex"];
+            int categoryRowIndex = (int)_config["categoryRowIndex"];
+            int columnStartIndex = (int)_config["columnStartIndex"];
+            //determine number of columns to traverse
+            int columnIndex = columnStartIndex;
+            var category = string.Empty;
+
+            while (true)
+            {
+                //detect end of 
+                if (_workSheet.Cells[subjectRowIndex, columnIndex].FirstOrDefault() == null || _workSheet.Cells[subjectRowIndex, columnIndex].First().Value == null)
+                {
+                    break;
+                }
+
+                var subjectName = Convert.ToString(_workSheet.Cells[subjectRowIndex, columnIndex].First().Value);
+
+                var newCategory = Convert.ToString(_workSheet.Cells[categoryRowIndex, columnIndex].First().Value);
+                if (!string.IsNullOrWhiteSpace(newCategory))
+                {
+                    category = newCategory;
+                }
+
+                if (skipSubject(subjectName, _config))
+                {
+                    columnIndex++;
+                    continue;
+                };
+
+                if (_workSheet.Cells[rowIndex, columnIndex].FirstOrDefault() != null
+                    && _workSheet.Cells[rowIndex, columnIndex].First().Value != null)
+                {
+                    var rawScore = Convert.ToString(_workSheet.Cells[rowIndex, columnIndex].First().Value);
+
+                    decimal score;
+                    decimal.TryParse(rawScore, out score);
+                    
+                    var subjectScore = new Legacy_SubjectScore()
+                     {
+                         Score = score,
+                         StudentId = studentId,
+                         Subject = subjectName,
+                         Category = category
+                     };
+
+                    scores.Add(subjectScore);
+                }
+
+                columnIndex++;
+            }
+
+            return scores;
+        }
+
+        private Placement importPlacement(int rowIndex)
+        {
+            var placementRecord = new Placement();
+            //placementRecord.StudentUid = studentProfile.Uid;
+
+            placementRecord.OfferLetter = _helper.getCellValue("OfferLetter", rowIndex);
+            placementRecord.CourseCompletionStatus = _helper.getCellValue("CourseCompletionStatus", rowIndex);
+            placementRecord.Company = _helper.getCellValue("Company", rowIndex);
+            placementRecord.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
+            placementRecord.Comments = _helper.getCellValue("Comments", rowIndex);
+            placementRecord.Position = _helper.getCellValue("Position", rowIndex);
+            placementRecord.Salary = _helper.getCellValue("Salary", rowIndex);
+            placementRecord.Location = _helper.getCellValue("CompanyLocation", rowIndex);
+
+            return placementRecord;
+        }
+
+        private StudentProfile importProfile(int rowIndex)
+        {
+            ImportResult result = new ImportResult();
+
+            StudentProfile student = new StudentProfile();
+
+            GetExcelRow(rowIndex, student);
+
+            var uid = UidGenerator.GenerateUid(student.Name, student.TrainingCenter, student.Location, student.BatchNumer);
+
+            if (db.StudentProfiles.Where(s => s.Uid == uid).FirstOrDefault() != null)
+            {
+                uid = uid + rowIndex;
+            }
+
+            student.Uid = uid;
+            return student;
         }
 
         private void GetExcelRow(int rowIndex, StudentProfile student)
@@ -163,53 +224,7 @@ namespace ExcelReader
             student.TrainingCenter = _helper.getCellValue("TrainingCentre", rowIndex);
             student.BatchNumer = Convert.ToInt32(_helper.getCellValue("BatchNumber", rowIndex));
             student.LegacyUid = _helper.getCellValue("LegacyUid", rowIndex);
-            
-        }
 
-        private void AddExcelRow(int rowIndex, int i, string uid, StudentProfile student)
-        {
-            _helper.updateCellValue("Uid", rowIndex + i, uid);
-            _helper.updateCellValue("Name", rowIndex + i, student.Name);
-            _helper.updateCellValue("Mobile", rowIndex + i, student.MobileNumber);
-            _helper.updateCellValue("Gender", rowIndex + i, student.Gender);
-            _helper.updateCellValue("Email", rowIndex + i, student.Email);
-            _helper.updateCellValue("Age", rowIndex + i, student.Age.ToString());
-            _helper.updateCellValue("Demographics", rowIndex + i, student.Demographics);
-            _helper.updateCellValue("Education", rowIndex + i, student.Education);
-            _helper.updateCellValue("EmploymentStatus", rowIndex + i, student.EmploymentStatus);
-            _helper.updateCellValue("FamilyIncome", rowIndex + i, student.FamilyMonthlyIncome);
-            _helper.updateCellValue("PresentAddress", rowIndex + i, student.FullAddress);
-            _helper.updateCellValue("PermanentAddress", rowIndex + i, student.PermanentAddress);
-            _helper.updateCellValue("State", rowIndex + i, student.State);
-            _helper.updateCellValue("Location", rowIndex + i, student.Location);
-            _helper.updateCellValue("ParentMobileNumber", rowIndex + i, student.ParentMobileNumber);
-            _helper.updateCellValue("TrainingCentre", rowIndex + i, student.TrainingCenter);
-            _helper.updateCellValue("BatchNumber", rowIndex + i, student.BatchNumer.ToString());
-        }
-
-        private static StudentProfile getBufferEntry(StudentProfile sampleStudent, int i, string uid)
-        {
-            var student = new StudentProfile()
-            {
-                Uid = uid,
-                BatchNumer = sampleStudent.BatchNumer,
-                TrainingCenter = sampleStudent.TrainingCenter,
-                Location = sampleStudent.Location,
-                MobileNumber = "0000000000",
-                Name = "Buffer" + i,
-                EmploymentStatus = sampleStudent.EmploymentStatus,
-                ParentMobileNumber = "0000000000",
-                PermanentAddress = "unknown",
-                FullAddress = "unknown",
-                Education = "unknown",
-                Gender = "Unknown",
-                Demographics = "unknown",
-                Email = "unknown",
-                Age = 0,
-                State = sampleStudent.State,
-                FamilyMonthlyIncome = "unknown"
-            };
-            return student;
         }
 
 

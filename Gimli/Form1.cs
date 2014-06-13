@@ -1,4 +1,5 @@
 ﻿using ExcelReader;
+using ExcelReader.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml;
@@ -17,10 +18,15 @@ namespace Gimli
 {
     public partial class Form1 : Form
     {
+        IImporter importer;
+        JToken _config;
+        QSStagingDbContext db = new QSStagingDbContext();
+
         public Form1()
         {
             InitializeComponent();
             openFileDialog1 = new OpenFileDialog();
+            _config = LoadConfiguraiton();
         }
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e)
@@ -30,19 +36,15 @@ namespace Gimli
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
-            
-
             openFileDialog1.Filter = "Excel files (*.xls, *.xlsx)|*.xlsx; *.xls|All files (*.*)|*.*";
             openFileDialog1.FilterIndex = 2;
             openFileDialog1.RestoreDirectory = true;
-            
 
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 textBoxFile.Text = openFileDialog1.FileName;
-                Log(string.Format("Awesome sauce - You've selected {0} to be imported",  openFileDialog1.FileName));
-                
+                Log(string.Format("Awesome sauce - You've selected {0} to be imported", openFileDialog1.FileName));
+
             }
         }
 
@@ -54,19 +56,10 @@ namespace Gimli
                 var wb = package.Workbook;
                 var worksheet = wb.Worksheets.First();
 
-                var importOption = importOptions.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
-
-                var config = LoadConfiguraiton(importOption.Text);
-                if (config == null)
-                {
-                    Console.WriteLine("Configuration File Error");
-                    return;
-                }
-
                 try
                 {
-                    IImporter importer = GetImporter(importOption.Text, worksheet, config);
                     var result = importer.Import();
+
 
                     if (result.Failed)
                     {
@@ -75,12 +68,36 @@ namespace Gimli
                     }
                     else
                     {
+                        Log(String.Format("Found {0} Students to import", result.ImportStudents.Count()));
+                        Log(String.Format("Saving to database, please wait ... "));
+
+                        //all well till now for the center
+                        foreach (var student in result.ImportStudents)
+                        {
+                            db.StudentProfiles.Add(student.Profile);
+                            db.SaveChanges();
+
+                            student.Placement.StudentUid = student.Profile.Uid;
+                            student.Placement.StudentId = student.Profile.Id;
+                            db.Placements.Add(student.Placement);
+                            db.SaveChanges();
+
+                            foreach (var score in student.Scores)
+                            {
+                                score.StudentId = student.Profile.Id;
+
+                                score.Total = getTotalForsubject(score.Subject);
+                               
+                            }
+                            db.LegacySubjectScores.AddRange(student.Scores);
+                            db.SaveChanges();
+                        }
+
+
                         buttonImport.Enabled = false;
-                        Log("Hurrah !!! All is well");
-                        Log( string.Format("{0} records imported", result.NumberOfRecords));
+                        Log("Hurrah! Saved to Database. ");
+                        Log("-------------------------------------------");
                     }
-
-
 
                     package.Save();
                 }
@@ -88,48 +105,39 @@ namespace Gimli
                 {
                     Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
                     Log(excp.Message);
+                    Log(excp.StackTrace);
                 }
 
             }
         }
 
-        private static IImporter GetImporter(string importType, ExcelWorksheet worksheet, JToken config)
+        private decimal getTotalForsubject(string subject)
         {
-            IImporter importer;
+            var start = subject.IndexOf('(');
+            var end = subject.IndexOf(')');
 
-            switch (importType)
+            if (start > 0 && end > 0 && end > start)
             {
-                case "Profile":
-                    importer = new Importer(worksheet, config);
-                    break;
-                case "Scores":
-                    importer = new ScoresImporter(worksheet, config);
-                    break;
-                default:
-                    importer = new Importer(worksheet, config);
-                    break;
+                var rawTotal = subject.Substring(start + 1, end - start - 1);
+
+                decimal total;
+                Decimal.TryParse(rawTotal, out total);
+
+                return total;
             }
 
-            return importer;
+            return 0;
         }
 
-        private JToken LoadConfiguraiton(string uploadType)
+
+        private JToken LoadConfiguraiton()
         {
             JToken targetConfig = null;
             try
             {
                 using (var reader = File.OpenText(@"legacyimport.config"))
                 {
-                    var config = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
-
-
-                    foreach (var entry in config["configurations"])
-                    {
-                        if ((string)entry["file"] == uploadType)
-                        {
-                            targetConfig = entry;
-                        }
-                    }
+                    targetConfig = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
                 }
 
             }
@@ -144,9 +152,7 @@ namespace Gimli
 
         private void Log(string message)
         {
-            var current = textBoxConsole.Text;
-
-            textBoxConsole.Text = current + Environment.NewLine + "> " + message;
+            textBoxConsole.AppendText(Environment.NewLine + "> " + message);
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -157,27 +163,28 @@ namespace Gimli
                 return;
             }
 
+            Stream existingFile = null;
             try
             {
                 Log("Starting Validation...");
                 //open the file and validate the entries
-                var existingFile = openFileDialog1.OpenFile();
+                existingFile = openFileDialog1.OpenFile();
+            }
+            catch (Exception exp)
+            {
+                Log("Could not open file");
+                Log(exp.Message);
+                Log(exp.StackTrace);
+            }
 
+            try
+            {
                 using (var package = new ExcelPackage(existingFile))
                 {
                     var wb = package.Workbook;
                     var worksheet = wb.Worksheets.First();
 
-                    var importOption = importOptions.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked);
-
-                    var config = LoadConfiguraiton(importOption.Text);
-                    if (config == null)
-                    {
-                        Console.WriteLine("Configuration File Error");
-                        return;
-                    }
-
-                    IImporter importer = GetImporter(importOption.Text, worksheet, config);
+                    importer = new Importer(worksheet, _config);
                     var result = importer.Validate();
 
                     Log(result.Message);
@@ -196,7 +203,9 @@ namespace Gimli
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
+                Log(ex.Message);
+                if (ex.InnerException != null)
+                    Log(ex.InnerException.Message);
             }
         }
     }

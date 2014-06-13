@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace ExcelReader.Models
 {
-    class Placement
+    public class Placement
     {
         public int Id { get; set; }
+        public int StudentId { get; set; }
         public string StudentUid { get; set; }
 
         public string CourseCompletionStatus { get; set; }

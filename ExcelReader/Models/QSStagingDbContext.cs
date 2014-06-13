@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 
 namespace ExcelReader.Models
 {
-    class QSStagingDbContext: DbContext
+    public class QSStagingDbContext: DbContext
     {
         public DbSet<StudentProfile> StudentProfiles { get; set; }
         public DbSet<SubjectScore> SubjectScores { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Placement> Placements { get; set; }
-        public DbSet<Legacy_Subject> LegacySubjects { get; set; }
         public DbSet<Legacy_SubjectScore> LegacySubjectScores { get; set; }
 
     }

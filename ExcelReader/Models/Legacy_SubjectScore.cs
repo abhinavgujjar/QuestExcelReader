@@ -9,11 +9,10 @@ namespace ExcelReader.Models
     public class Legacy_SubjectScore
     {
         public int Id { get; set; }
-        public string StudentUID { get; set; }
-        public int Total { get; set; }
-        public int Score { get; set; }
-        public int SubjectId { get; set; }
+        public int StudentId { get; set; }
+        public decimal Total { get; set; }
+        public decimal Score { get; set; }
         public string Subject { get; set; }
-        public bool IsBaseLine { get; set; }
+        public string Category { get; set; }
     }
 }

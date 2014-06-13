@@ -56,7 +56,7 @@ namespace ExcelReader
                 var wb = package.Workbook;
                 var worksheet = wb.Worksheets.First();
 
-                IImporter importer = GetImporter(options.UploadType, worksheet, config);
+                IImporter importer = new Importer(worksheet, config);
                 importer.Import();
 
                 Console.WriteLine("Done Importing");
@@ -67,26 +67,7 @@ namespace ExcelReader
             Console.ReadLine();
         }
 
-        private static IImporter GetImporter(string importType, ExcelWorksheet worksheet, JToken config)
-        {
-            IImporter importer;
-
-            switch (importType)
-            {
-                case "StudentProfile":
-                    importer = new Importer(worksheet, config);
-                    break;
-                case "Incremental":
-                    importer = new ScoresImporter(worksheet, config);
-                    break;
-                default:
-                    importer = new Importer(worksheet, config);
-                    break;
-            }
-
-            return importer;
-        }
-
+        
         private static FileInfo LoadFile(string docName)
         {
             FileInfo existingFile;

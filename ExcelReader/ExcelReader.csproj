@@ -82,12 +82,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FullStudent.cs" />
     <Compile Include="IImporter.cs" />
     <Compile Include="ImportResult.cs" />
     <Compile Include="Models\Legacy_SubjectScore.cs" />
     <Compile Include="Models\Legacy_Subject.cs" />
     <Compile Include="Models\Placement.cs" />
-    <Compile Include="ScoresImporter.cs" />
     <Compile Include="Models\Subject.cs" />
     <Compile Include="Models\SubjectScore.cs" />
     <Compile Include="UidGenerator.cs" />
