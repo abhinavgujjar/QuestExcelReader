@@ -21,7 +21,6 @@ namespace ExcelReader
 
         QSStagingDbContext db = new QSStagingDbContext();
 
-        public int NumberOfBufferRecords { get; set; }
 
         public Importer(ExcelWorksheet workSheet, JToken config)
         {
@@ -29,7 +28,6 @@ namespace ExcelReader
             _config = config;
             _helper = new WorksheetHelper(_workSheet, _config);
 
-            NumberOfBufferRecords = (int)_config["numberOfBufferRecords"];
         }
 
         public ValidationResult Validate()
@@ -58,7 +56,8 @@ namespace ExcelReader
 
             while (true)
             {
-                if (_workSheet.Cells[rowIndex, 1].First().Value == null)
+                var studentId = _helper.getCellValue("StudentId", rowIndex);
+                if (String.IsNullOrWhiteSpace(studentId))
                 {
                     //reached the end of records
                     break;
@@ -71,14 +70,6 @@ namespace ExcelReader
 
                     var profile = importProfile(rowIndex);
                     student.Profile = profile;
-
-
-                    var placement = importPlacement(rowIndex);
-                    student.Placement = placement;
-
-
-                    var scores = importScores(rowIndex, profile.Id, first);
-                    student.Scores = scores;
 
                     imports.Add(student);
                    
@@ -194,36 +185,32 @@ namespace ExcelReader
 
             GetExcelRow(rowIndex, student);
 
-            var uid = UidGenerator.GenerateUid(student.Name, student.TrainingCenter, student.Location, student.BatchNumer);
-
-            if (db.StudentProfiles.Where(s => s.Uid == uid).FirstOrDefault() != null)
-            {
-                uid = uid + rowIndex;
-            }
-
-            student.Uid = uid;
             return student;
         }
 
         private void GetExcelRow(int rowIndex, StudentProfile student)
         {
-            student.Name = _helper.getCellValue("Name", rowIndex);
-            student.MobileNumber = _helper.getCellValue("Mobile", rowIndex);
+            student.FirstName = _helper.getCellValue("FirstName", rowIndex);
+            student.LastName = _helper.getCellValue("LastName", rowIndex);
+            student.Uid = _helper.getCellValue("StudentId", rowIndex);
             student.Gender = _helper.getCellValue("Gender", rowIndex);
+            student.MobileNumber = _helper.getCellValue("Mobile", rowIndex);
+            student.Education = _helper.getCellValue("Education", rowIndex);
+            student.MaritalStatus = _helper.getCellValue("MaritalStatus", rowIndex);
             student.Email = _helper.getCellValue("Email", rowIndex);
             student.Age = Convert.ToInt32(_helper.getCellValue("Age", rowIndex));
-            student.Demographics = _helper.getCellValue("Demographics", rowIndex);
-            student.Education = _helper.getCellValue("Education", rowIndex);
-            student.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
+            student.WorkExperience = _helper.getCellValue("WorkExperience", rowIndex);
+            student.ParentName = _helper.getCellValue("ParentName", rowIndex);
+            student.ParentContact = _helper.getCellValue("ParentContact", rowIndex);
+            student.PermanentAddress = _helper.getCellValue("Address", rowIndex);
             student.FamilyMonthlyIncome = _helper.getCellValue("FamilyIncome", rowIndex);
-            student.FullAddress = _helper.getCellValue("PresentAddress", rowIndex);
-            student.PermanentAddress = _helper.getCellValue("PermanentAddress", rowIndex);
-            student.State = _helper.getCellValue("State", rowIndex);
-            student.Location = _helper.getCellValue("Location", rowIndex);
-            student.ParentMobileNumber = _helper.getCellValue("ParentMobileNumber", rowIndex);
             student.TrainingCenter = _helper.getCellValue("TrainingCentre", rowIndex);
-            student.BatchNumer = Convert.ToInt32(_helper.getCellValue("BatchNumber", rowIndex));
-            student.LegacyUid = _helper.getCellValue("LegacyUid", rowIndex);
+            student.Location = _helper.getCellValue("Location", rowIndex);
+            student.BatchStart = _helper.getCellValue("BatchStart", rowIndex);
+            student.BatchEnd = _helper.getCellValue("BatchEnd", rowIndex);
+            student.Demographics = _helper.getCellValue("Demographics", rowIndex);
+            student.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
+            student.State = _helper.getCellValue("State", rowIndex);
 
         }
 

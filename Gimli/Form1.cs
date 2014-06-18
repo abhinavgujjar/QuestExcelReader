@@ -18,7 +18,6 @@ namespace Gimli
 {
     public partial class Form1 : Form
     {
-        IImporter importer;
         JToken _config;
         QSStagingDbContext db = new QSStagingDbContext();
 
@@ -27,30 +26,23 @@ namespace Gimli
             InitializeComponent();
             openFileDialog1 = new OpenFileDialog();
             _config = LoadConfiguraiton();
-        }
 
-        private void radioButton1_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            openFileDialog1.Filter = "Excel files (*.xls, *.xlsx)|*.xlsx; *.xls|All files (*.*)|*.*";
-            openFileDialog1.FilterIndex = 2;
-            openFileDialog1.RestoreDirectory = true;
-
-            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            if (_config == null)
             {
-                textBoxFile.Text = openFileDialog1.FileName;
-                Log(string.Format("Awesome sauce - You've selected {0} to be imported", openFileDialog1.FileName));
-
+                buttonImportProfile.Enabled = false;
+                buttonImportScores.Enabled = false;
             }
+            else
+            {
+                Log("Select File to import...");
+            }
+
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
             var existingFile = openFileDialog1.OpenFile();
+
             using (var package = new ExcelPackage(existingFile))
             {
                 var wb = package.Workbook;
@@ -58,6 +50,7 @@ namespace Gimli
 
                 try
                 {
+                    var importer = new Importer(worksheet, _config);
                     var result = importer.Import();
 
 
@@ -94,7 +87,7 @@ namespace Gimli
                         }
 
 
-                        buttonImport.Enabled = false;
+                        buttonImportProfile.Enabled = false;
                         Log("Hurrah! Saved to Database. ");
                         Log("-------------------------------------------");
                     }
@@ -140,11 +133,13 @@ namespace Gimli
                     targetConfig = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
                 }
 
+                Log("Loaded configuration file successfully." );
+
             }
             catch (Exception e)
             {
                 Log("Config file is a little messed up - " + e.Message);
-                Log("Aborting! It's ok. It happens... ");
+                Log("FIX CONFIG FILE");
             }
 
             return targetConfig;
@@ -155,57 +150,83 @@ namespace Gimli
             textBoxConsole.AppendText(Environment.NewLine + "> " + message);
         }
 
-        private void button3_Click(object sender, EventArgs e)
+          private void buttonImport_Click(object sender, EventArgs e)
         {
             if (String.IsNullOrEmpty(openFileDialog1.FileName))
             {
-                Log("Umm.. you want to try selecting file first?");
+                Log("No file selected for import. Select file...");
                 return;
             }
 
-            Stream existingFile = null;
-            try
-            {
-                Log("Starting Validation...");
-                //open the file and validate the entries
-                existingFile = openFileDialog1.OpenFile();
-            }
-            catch (Exception exp)
-            {
-                Log("Could not open file");
-                Log(exp.Message);
-                Log(exp.StackTrace);
-            }
-
-            try
+            using (var existingFile = openFileDialog1.OpenFile())
             {
                 using (var package = new ExcelPackage(existingFile))
                 {
                     var wb = package.Workbook;
                     var worksheet = wb.Worksheets.First();
 
-                    importer = new Importer(worksheet, _config);
-                    var result = importer.Validate();
-
-                    Log(result.Message);
-
-                    if (result.Valid)
+                    try
                     {
-                        Log("Press Import to continue... ");
-                        buttonImport.Enabled = true;
+                        var importer = new Importer(worksheet, _config);
+                        var result = importer.Import();
+
+
+                        if (result.Failed)
+                        {
+                            Log("Ooops. Something went wrong during the import");
+                            Log(result.Message);
+                        }
+                        else
+                        {
+                            Log(String.Format("Found {0} Students to import", result.ImportStudents.Count()));
+
+                            Log(String.Format("Saving to database, please wait ... "));
+
+                            //all well till now for the center
+                            foreach (var student in result.ImportStudents)
+                            {
+                                var targetStudent = db.StudentProfiles.Where(p => p.Uid == student.Profile.Uid).SingleOrDefault();
+                                if (targetStudent == null)
+                                {
+                                    db.StudentProfiles.Add(student.Profile);
+                                }
+                                else
+                                {
+                                    //this will set the changed values to the taget student record from the database.
+                                    db.Entry(targetStudent).CurrentValues.SetValues(student);
+                                }
+
+                                db.SaveChanges();
+                            }
+
+
+                            buttonImportProfile.Enabled = false;
+                            Log("Hurrah! Saved to Database. ");
+                            Log("-------------------------------------------");
+                        }
+
                     }
-                    else
+                    catch (Exception excp)
                     {
-                        Log("Oh no! We can't import this file just yet. If you know what you're doing, go ahead and correct the import file and try again. Else - contact Abhijeet Mehta");
+                        Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
+                        Log(excp.Message);
+                        Log(excp.StackTrace);
                     }
                 }
-
             }
-            catch (Exception ex)
+        }
+
+        private void buttonSelectFile_Click(object sender, EventArgs e)
+        {
+            openFileDialog1.Filter = "Excel files (*.xls, *.xlsx)|*.xlsx; *.xls|All files (*.*)|*.*";
+            openFileDialog1.FilterIndex = 2;
+            openFileDialog1.RestoreDirectory = true;
+
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                Log(ex.Message);
-                if (ex.InnerException != null)
-                    Log(ex.InnerException.Message);
+                textBoxFile.Text = openFileDialog1.FileName;
+                Log(string.Format("Awesome sauce - You've selected {0} to be imported", openFileDialog1.FileName));
+
             }
         }
     }
