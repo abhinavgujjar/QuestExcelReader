@@ -14,6 +14,7 @@ namespace ExcelReader.Models
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Placement> Placements { get; set; }
         public DbSet<Legacy_SubjectScore> LegacySubjectScores { get; set; }
+        public DbSet<Post_Placement> PostPlacement { get; set; }
 
     }
 }

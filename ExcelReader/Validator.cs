@@ -86,7 +86,7 @@ namespace ExcelReader
             var result = new ValidationResult();
 
             QSStagingDbContext db = new QSStagingDbContext();
-            var duplicates = db.StudentProfiles.Where(p => p.TrainingCenter.ToLower().Trim() == centre && p.BatchNumer == batch).Count();
+            var duplicates = db.StudentProfiles.Where(p => p.TrainingCenter.ToLower().Trim() == centre && p.BatchNumber.Equals(batch)).Count();
 
             if (duplicates > 0)
             {

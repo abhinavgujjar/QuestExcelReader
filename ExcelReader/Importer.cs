@@ -53,6 +53,8 @@ namespace ExcelReader
             bool first = true;
             List<string> messages = new List<string>();
             List<FullStudent> imports = new List<FullStudent>();
+            List<FullStudent> imports1 = new List<FullStudent>();
+            List<FullStudent> imports2 = new List<FullStudent>();
 
             while (true)
             {
@@ -63,17 +65,27 @@ namespace ExcelReader
                     break;
                 }
 
+                
+
 
                 try
                 {
                     FullStudent student = new FullStudent();
-
+                    FullStudent placementRecord = new FullStudent();
+                    FullStudent postPlacementRecord = new FullStudent();
                     var profile = importProfile(rowIndex);
+                    var placement = importPlacement(rowIndex);
+                    var postplacement = importPostPlacement(rowIndex); 
+                    placementRecord.Placement = placement;
                     student.Profile = profile;
-
+                    postPlacementRecord.PostPlacement = postplacement; 
                     imports.Add(student);
-                   
+                    imports1.Add(placementRecord);
+                    imports2.Add(postPlacementRecord);
                 }
+
+                    
+
                 catch (Exception e)
                 {
                     throw new ApplicationException("Error loading at row : " + rowIndex, e);
@@ -84,7 +96,8 @@ namespace ExcelReader
             }
 
             result.ImportStudents = imports;
-
+            result.ImportPlacements = imports1;
+            result.ImportPostPlacements = imports2;
             return result;
         }
 
@@ -160,11 +173,12 @@ namespace ExcelReader
             return scores;
         }
 
-        private Placement importPlacement(int rowIndex)
+        /*private Placement importPlacement(int rowIndex)
         {
             var placementRecord = new Placement();
             //placementRecord.StudentUid = studentProfile.Uid;
-
+           // placementRecord.StudentId = Convert.ToInt32(_helper.getCellValue("StudentId", rowIndex));
+            //placementRecord.StudentUid = _helper.getCellValue("StudentUid", rowIndex);
             placementRecord.OfferLetter = _helper.getCellValue("OfferLetter", rowIndex);
             placementRecord.CourseCompletionStatus = _helper.getCellValue("CourseCompletionStatus", rowIndex);
             placementRecord.Company = _helper.getCellValue("Company", rowIndex);
@@ -175,7 +189,7 @@ namespace ExcelReader
             placementRecord.Location = _helper.getCellValue("CompanyLocation", rowIndex);
 
             return placementRecord;
-        }
+        }*/
 
         private StudentProfile importProfile(int rowIndex)
         {
@@ -188,13 +202,65 @@ namespace ExcelReader
             return student;
         }
 
+        private Placement importPlacement(int rowIndex)
+        {
+            ImportResult result = new ImportResult();
+
+            Placement placementRecord = new Placement();
+
+            GetExcelRow(rowIndex, placementRecord);
+
+            return placementRecord;
+        }
+
+        private Post_Placement importPostPlacement(int rowIndex)
+        {
+            ImportResult result = new ImportResult();
+
+            Post_Placement postPlacementRecord = new Post_Placement();
+
+            GetExcelRow(rowIndex, postPlacementRecord);
+
+            return postPlacementRecord;
+        }
+
+        private void GetExcelRow(int rowIndex, Placement placementRecord)
+        {
+                placementRecord.StudentUid = _helper.getCellValue("StudentId", rowIndex);
+                placementRecord.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
+                placementRecord.Position = _helper.getCellValue("Designation", rowIndex);
+                placementRecord.Company = _helper.getCellValue("Company", rowIndex);
+                placementRecord.Location = _helper.getCellValue("CompanyLocation", rowIndex);
+                placementRecord.NatureOfJob = _helper.getCellValue("JobType", rowIndex);
+                placementRecord.Salary = (_helper.getCellValue("Salary", rowIndex));
+                placementRecord.IfContEduReason = _helper.getCellValue("ContinueEducation", rowIndex);
+                placementRecord.IfDropOutReason = _helper.getCellValue("DropOutReason", rowIndex);
+                placementRecord.UpdatedContact = _helper.getCellValue("UpdatedContactDetail", rowIndex);
+           
+        }
+
+        private void GetExcelRow(int rowIndex, Post_Placement postPlacementRecord)
+        {
+            postPlacementRecord.StudentUid = _helper.getCellValue("StudentId", rowIndex);
+            postPlacementRecord.ContinueJob = _helper.getCellValue("ContinueJob", rowIndex);
+            postPlacementRecord.Company = _helper.getCellValue("PostCompany", rowIndex);
+            postPlacementRecord.Position = _helper.getCellValue("PostDesignation", rowIndex);
+            postPlacementRecord.Salary = _helper.getCellValue("PostSalary", rowIndex);
+            postPlacementRecord.UpdatedContact = _helper.getCellValue("PostUpdatedContact", rowIndex);
+        }
+
+
+            
         private void GetExcelRow(int rowIndex, StudentProfile student)
         {
             student.FirstName = _helper.getCellValue("FirstName", rowIndex);
             student.LastName = _helper.getCellValue("LastName", rowIndex);
+            student.OrganisationName = _helper.getCellValue("Oraganisation", rowIndex);
+            student.TrainingCenter = _helper.getCellValue("TrainingCentre", rowIndex);
+            student.BatchNumber = _helper.getCellValue("BatchNumber", rowIndex);
+            student.Prefix = _helper.getCellValue("Prefix", rowIndex);
             student.Uid = _helper.getCellValue("StudentId", rowIndex);
-            student.Gender = _helper.getCellValue("Gender", rowIndex);
-            student.MobileNumber = _helper.getCellValue("Mobile", rowIndex);
+            student.Gender = _helper.getCellValue("Gender", rowIndex);        
             student.Education = _helper.getCellValue("Education", rowIndex);
             student.MaritalStatus = _helper.getCellValue("MaritalStatus", rowIndex);
             student.Email = _helper.getCellValue("Email", rowIndex);
@@ -204,13 +270,12 @@ namespace ExcelReader
             student.ParentContact = _helper.getCellValue("ParentContact", rowIndex);
             student.PermanentAddress = _helper.getCellValue("Address", rowIndex);
             student.FamilyMonthlyIncome = _helper.getCellValue("FamilyIncome", rowIndex);
-            student.TrainingCenter = _helper.getCellValue("TrainingCentre", rowIndex);
-            student.Location = _helper.getCellValue("Location", rowIndex);
+            student.ParentOccupation = _helper.getCellValue("ParentOccupation", rowIndex);        
             student.BatchStart = _helper.getCellValue("BatchStart", rowIndex);
             student.BatchEnd = _helper.getCellValue("BatchEnd", rowIndex);
-            student.Demographics = _helper.getCellValue("Demographics", rowIndex);
-            student.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
             student.State = _helper.getCellValue("State", rowIndex);
+            student.Mobile = _helper.getCellValue("Mobile", rowIndex);
+            student.EmploymentStatus = _helper.getCellValue("EmploymentStatus", rowIndex);
 
         }
 

@@ -10,7 +10,9 @@ namespace ExcelReader.Migrations
         public Configuration()
         {
             AutomaticMigrationsEnabled = true;
+            AutomaticMigrationDataLossAllowed = true;
         }
+
 
         protected override void Seed(ExcelReader.Models.QSStagingDbContext context)
         {

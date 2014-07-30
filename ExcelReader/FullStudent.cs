@@ -10,6 +10,7 @@ namespace ExcelReader
     {
         public StudentProfile Profile { get; set; }
         public Placement Placement { get; set; }
+        public Post_Placement PostPlacement { get; set; }
         public List<Legacy_SubjectScore> Scores { get; set; }
     }
 }

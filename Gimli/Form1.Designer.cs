@@ -35,6 +35,7 @@
             this.buttonImportProfile = new System.Windows.Forms.Button();
             this.textBoxFile = new System.Windows.Forms.TextBox();
             this.buttonImportScores = new System.Windows.Forms.Button();
+            this.generateReport = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // openFileDialog1
@@ -75,7 +76,7 @@
             this.buttonImportProfile.TabIndex = 15;
             this.buttonImportProfile.Text = "Import Profile";
             this.buttonImportProfile.UseVisualStyleBackColor = true;
-            this.buttonImportProfile.Click += new System.EventHandler(this.buttonImport_Click);
+            this.buttonImportProfile.Click += new System.EventHandler(this.buttonImportProfile_Click);
             // 
             // textBoxFile
             // 
@@ -95,12 +96,25 @@
             this.buttonImportScores.TabIndex = 16;
             this.buttonImportScores.Text = "Import Scores";
             this.buttonImportScores.UseVisualStyleBackColor = true;
+            this.buttonImportScores.Click += new System.EventHandler(this.buttonImportScores_Click);
+            // 
+            // generateReport
+            // 
+            this.generateReport.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.generateReport.Location = new System.Drawing.Point(303, 532);
+            this.generateReport.Name = "generateReport";
+            this.generateReport.Size = new System.Drawing.Size(218, 37);
+            this.generateReport.TabIndex = 17;
+            this.generateReport.Text = "Generate Report";
+            this.generateReport.UseVisualStyleBackColor = true;
+            this.generateReport.Click += new System.EventHandler(this.generateReport_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(842, 518);
+            this.ClientSize = new System.Drawing.Size(842, 598);
+            this.Controls.Add(this.generateReport);
             this.Controls.Add(this.buttonSelectFile);
             this.Controls.Add(this.buttonImportProfile);
             this.Controls.Add(this.textBoxFile);
@@ -114,6 +128,7 @@
 
         }
 
+        
         #endregion
 
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
@@ -122,6 +137,7 @@
         private System.Windows.Forms.Button buttonImportProfile;
         private System.Windows.Forms.TextBox textBoxFile;
         private System.Windows.Forms.Button buttonImportScores;
+        private System.Windows.Forms.Button generateReport;
     }
 }
 

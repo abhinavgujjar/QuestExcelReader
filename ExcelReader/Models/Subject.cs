@@ -9,6 +9,7 @@ namespace ExcelReader.Models
     public class Subject
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string SubjectName { get; set; }
+        public string TotalMarks { get; set; }
     }
 }
