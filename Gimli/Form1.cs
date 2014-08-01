@@ -446,9 +446,12 @@ namespace Gimli
                     }
                     catch (Exception excp)
                     {
-                        Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
                         Log(excp.Message);
                         Log(excp.StackTrace);
+                        Log("---------------------------------------------------------------------------");
+                        Log("---------------------------------------------------------------------------");
+                        Log("                                                                           ");
+                        Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
                     }
                 }
             }
@@ -461,128 +464,143 @@ namespace Gimli
                   Log("No file selected for import. Select file...");
                   return;
               }
-              var existingFile = openFileDialog1.OpenFile();
-              // Open and read the XlSX file.
-              const int startRow = 1;
-              using (var package = new ExcelPackage(existingFile))
+              try
               {
-                  // Get the work book in the file
-                  ExcelWorkbook workBook = package.Workbook;
-                  if (workBook != null)
+                  var existingFile = openFileDialog1.OpenFile();
+                  // Open and read the XlSX file.
+                  const int startRow = 1;
+                  using (var package = new ExcelPackage(existingFile))
                   {
-                      if (workBook.Worksheets.Count > 0)
+                      // Get the work book in the file
+                      ExcelWorkbook workBook = package.Workbook;
+                      if (workBook != null)
                       {
-
-                          // Get the first worksheet
-                          ExcelWorksheet currentWorksheet = workBook.Worksheets.First();
-                          var SubjectInfo = new Subject();
-
-                          int temp = 1;
-                          for (int i = 1; i <= currentWorksheet.Dimension.End.Column; i++)
+                          if (workBook.Worksheets.Count > 0)
                           {
-                              if (currentWorksheet.Cells[startRow, i].Value != null)
+
+                              // Get the first worksheet
+                              ExcelWorksheet currentWorksheet = workBook.Worksheets.First();
+                              var SubjectInfo = new Subject();
+
+                              int temp = 1;
+                              for (int i = 1; i <= currentWorksheet.Dimension.End.Column; i++)
                               {
-
-                                  SubjectInfo.SubjectName = currentWorksheet.Cells[startRow, i].Value.ToString();
-
-                                  for (int j = temp; j <= currentWorksheet.Dimension.End.Column; j++)
+                                  if (currentWorksheet.Cells[startRow, i].Value != null)
                                   {
-                                      if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("Course Total"))
-                                      {
-                                          temp = j + 1;
 
-                                          SubjectInfo.TotalMarks = currentWorksheet.Cells[startRow + 2, j].Value.ToString();
-                                          var targetSubject = db.Subjects.Where(p => p.SubjectName == SubjectInfo.SubjectName).SingleOrDefault();
-                                          if (targetSubject == null)
-                                          {
-                                              db.Subjects.Add(SubjectInfo);
-                                              db.SaveChanges();
-                                              Log(String.Format("Subjects Added:- {0} ", SubjectInfo.SubjectName));
-                                              break;
-                                          }
-                                          else
-                                          {
-                                              targetSubject.TotalMarks = SubjectInfo.TotalMarks;
-                                              db.SaveChanges();
-                                              Log(String.Format("Subjects Updated:- {0} ", SubjectInfo.SubjectName));
-                                              break;
-                                          }
+                                      SubjectInfo.SubjectName = currentWorksheet.Cells[startRow, i].Value.ToString();
 
-                                      }
-                                  }
-                              }
-                          }
-
-                          int k = 6;
-                          SubjectScore SubjectScoreInfo = new SubjectScore();
-                          for (int i = 1; i <= currentWorksheet.Dimension.End.Column; i++)
-                          {
-                              if (currentWorksheet.Cells[startRow, i].Value != null)
-                              {
-                                  SubjectScoreInfo.Subject = currentWorksheet.Cells[startRow, i].Value.ToString();
-
-                                  for (int j = k; j <= currentWorksheet.Dimension.End.Column; j++)
-                                  {
-                                      
-                                      if (Convert.ToInt32(currentWorksheet.Cells[startRow + 2, j].Value) != 1)
+                                      for (int j = temp; j <= currentWorksheet.Dimension.End.Column; j++)
                                       {
                                           if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("Course Total"))
                                           {
-                                              k = j+1;
-                                              break;
-                                          }
-                                          else
-                                          {
-                                              if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("%") == false)
+                                              temp = j + 1;
+
+                                              SubjectInfo.TotalMarks = currentWorksheet.Cells[startRow + 2, j].Value.ToString();
+                                              var targetSubject = db.Subjects.Where(p => p.SubjectName == SubjectInfo.SubjectName).SingleOrDefault();
+                                              if (targetSubject == null)
                                               {
-                                                  if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("CGPA") == false)
+                                                  db.Subjects.Add(SubjectInfo);
+                                                  db.SaveChanges();
+                                                  Log(String.Format("Subjects Added:- {0} ", SubjectInfo.SubjectName));
+                                                  break;
+                                              }
+                                              else
+                                              {
+                                                  targetSubject.TotalMarks = SubjectInfo.TotalMarks;
+                                                  db.SaveChanges();
+                                                  Log(String.Format("Subjects Updated:- {0} ", SubjectInfo.SubjectName));
+                                                  break;
+                                              }
+
+                                          }
+                                      }
+                                  }
+                              }
+
+                              int k = 6;
+                              SubjectScore SubjectScoreInfo = new SubjectScore();
+                              for (int i = 1; i <= currentWorksheet.Dimension.End.Column; i++)
+                              {
+                                  if (currentWorksheet.Cells[startRow, i].Value != null)
+                                  {
+                                      SubjectScoreInfo.Subject = currentWorksheet.Cells[startRow, i].Value.ToString();
+
+                                      for (int j = k; j <= currentWorksheet.Dimension.End.Column; j++)
+                                      {
+
+                                          if (Convert.ToInt32(currentWorksheet.Cells[startRow + 2, j].Value) != 1)
+                                          {
+                                              if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("Course Total"))
+                                              {
+                                                  k = j + 1;
+                                                  break;
+                                              }
+                                              else
+                                              {
+                                                  if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("%") == false)
                                                   {
-
-                                                      for (int n = 4; n <= currentWorksheet.Dimension.End.Row; n++)
+                                                      if (currentWorksheet.Cells[startRow + 1, j].Value.ToString().Trim().Equals("CGPA") == false)
                                                       {
-                                                          if ((String)(currentWorksheet.Cells[n, 3].Value) == null)
-                                                          {
-                                                          }
-                                                          else
-                                                          {
-                                                              SubjectScoreInfo.StudentUID = (String)(currentWorksheet.Cells[n, 3].Value);
-                                                              SubjectScoreInfo.Lessons = currentWorksheet.Cells[startRow + 1, j].Value.ToString();
-                                                              SubjectScoreInfo.Score = Convert.ToInt32(currentWorksheet.Cells[n, j].Value);
-                                                              var targetScoreInfo = db.SubjectScores.Where(p => p.StudentUID == SubjectScoreInfo.StudentUID && p.Subject == SubjectScoreInfo.Subject && p.Lessons == SubjectScoreInfo.Lessons).SingleOrDefault();
-                                                              if (targetScoreInfo == null)
-                                                              {
-                                                                  db.SubjectScores.Add(SubjectScoreInfo);
-                                                                  db.SaveChanges();
-                                                                  Log(String.Format("Student Id:- {0} Subjects :- {1} Lession :- {2}, Score :-{3} added", SubjectScoreInfo.StudentUID, SubjectScoreInfo.Subject, SubjectScoreInfo.Lessons, SubjectScoreInfo.Score));
 
+                                                          for (int n = 4; n <= currentWorksheet.Dimension.End.Row; n++)
+                                                          {
+                                                              if ((String)(currentWorksheet.Cells[n, 3].Value) == null)
+                                                              {
                                                               }
                                                               else
                                                               {
-                                                                  targetScoreInfo.Subject = SubjectScoreInfo.Subject;
-                                                                  targetScoreInfo.Lessons = SubjectScoreInfo.Lessons;
-                                                                  targetScoreInfo.Score = SubjectScoreInfo.Score;
-                                                                  db.SaveChanges();
-                                                                  Log(String.Format("Student Id:- {0} Subjects :- {1} Lession :- {2}, Score :-{3} updated", SubjectScoreInfo.StudentUID, SubjectScoreInfo.Subject, SubjectScoreInfo.Lessons, SubjectScoreInfo.Score));
+                                                                  SubjectScoreInfo.StudentUID = (String)(currentWorksheet.Cells[n, 3].Value);
+                                                                  SubjectScoreInfo.Lessons = currentWorksheet.Cells[startRow + 1, j].Value.ToString();
+                                                                  SubjectScoreInfo.Score = Convert.ToInt32(currentWorksheet.Cells[n, j].Value);
+                                                                  var targetScoreInfo = db.SubjectScores.Where(p => p.StudentUID == SubjectScoreInfo.StudentUID && p.Subject == SubjectScoreInfo.Subject && p.Lessons == SubjectScoreInfo.Lessons).SingleOrDefault();
+                                                                  if (targetScoreInfo == null)
+                                                                  {
+                                                                      db.SubjectScores.Add(SubjectScoreInfo);
+                                                                      db.SaveChanges();
+                                                                      Log(String.Format("Student Id:- {0} Subjects :- {1} Lession :- {2}, Score :-{3} added", SubjectScoreInfo.StudentUID, SubjectScoreInfo.Subject, SubjectScoreInfo.Lessons, SubjectScoreInfo.Score));
 
+                                                                  }
+                                                                  else
+                                                                  {
+                                                                      targetScoreInfo.Subject = SubjectScoreInfo.Subject;
+                                                                      targetScoreInfo.Lessons = SubjectScoreInfo.Lessons;
+                                                                      targetScoreInfo.Score = SubjectScoreInfo.Score;
+                                                                      db.SaveChanges();
+                                                                      Log(String.Format("Student Id:- {0} Subjects :- {1} Lession :- {2}, Score :-{3} updated", SubjectScoreInfo.StudentUID, SubjectScoreInfo.Subject, SubjectScoreInfo.Lessons, SubjectScoreInfo.Score));
+
+                                                                  }
                                                               }
+
                                                           }
 
                                                       }
-                                                      
+
                                                   }
-
                                               }
+
                                           }
-
                                       }
-                                  }
 
+                                  }
                               }
                           }
                       }
                   }
+                  Log("All records successfully saved");
               }
-              Log("All records successfully saved");
+              catch (Exception excp)
+              {
+                  Log(excp.Message);
+                  Log(excp.StackTrace);
+                  Log("---------------------------------------------------------------------------");
+                  Log("---------------------------------------------------------------------------");
+                  Log("                                                                           ");
+                  Log("File format is not correct");
+                  Log("Restart and try again");
+                  Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
+                  
+              }
           }
               
           
