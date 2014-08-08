@@ -176,7 +176,8 @@ namespace Gimli
                 Log("No file selected for import. Select file...");
                 return;
             }
-
+       try
+          {           
             using ( var existingFile = openFileDialog1.OpenFile())
             {
                 using (var package = new ExcelPackage(existingFile))
@@ -184,8 +185,6 @@ namespace Gimli
                     var wb = package.Workbook;
                     var worksheet = wb.Worksheets.First();
 
-                    try
-                    {
                         var importer = new Importer(worksheet, _config);
                         var result = importer.Import();
 
@@ -319,9 +318,7 @@ namespace Gimli
                                     Log(String.Format("Batch End Date format incorrect for Student Id:- {0} ", student.Profile.Uid));
                                     validateflag = 1;
                                 }
-
-                          
-
+                            
                                 var targetStudent = db.StudentProfiles.Where(p => p.Uid == student.Profile.Uid).SingleOrDefault();
                                 var updateflag = 0;
 
@@ -436,20 +433,22 @@ namespace Gimli
                            
                             Log("-------------------------------------------");
                         }
-
+                
                     }
-                    catch (Exception excp)
-                    {
-                        Log(excp.Message);
-                        Log(excp.StackTrace);
+            }
+       }
+            
+                    catch (Exception ex)
+                    {                        
+                        //Log(ex.StackTrace);
                         Log("---------------------------------------------------------------------------");
                         Log("---------------------------------------------------------------------------");
                         Log("                                                                           ");
-                        Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
-                    }
-                }
+                        Log(ex.Message);
+                        Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");                    
             }
-        }
+    }
+        
 
           private void buttonImportScores_Click(object sender, EventArgs e)
           {
@@ -585,52 +584,18 @@ namespace Gimli
               }
               catch (Exception excp)
               {
-                  Log(excp.Message);
-                  Log(excp.StackTrace);
+                  //Log(excp.StackTrace);
                   Log("---------------------------------------------------------------------------");
                   Log("---------------------------------------------------------------------------");
                   Log("                                                                           ");
                   Log("File format is not correct");
                   Log("Restart and try again");
+                  Log(excp.Message);
                   Log("Oops! Something went wrong with the import. Contact Abhijeet Mehta");
                   
               }
           }
-              
-          
-    
-                  
-              
-          
-                          
 
-                          
-
-                          //Log(String.Format("Demo:- {0} ", CourseName));
-                          //db.Subjects.Add(C);
-                          
-
-
-                          // read some data
-                          /*  object col1Header = currentWorksheet.Cells[startRow, 1].Value;
-                            object col2Header = currentWorksheet.Cells[startRow, 2].Value;
-
-                                  if (((col1Header != null) && (col1Header.ToString() == "Type of Accident")) &&
-                                      ((col2Header != null) && (col2Header.ToString() == "Google Results")))
-                                  {
-
-                            for (int rowNumber = startRow + 1; rowNumber <= currentWorksheet.Dimension.End.Row; rowNumber++)
-                                {
-                                          object col1Value = currentWorksheet.Cells[rowNumber, 1].Value;
-
-
-
-                        }
-                    }*/
-             
-          
-                  
-          
 
         private void buttonSelectFile_Click(object sender, EventArgs e)
         {
